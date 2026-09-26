@@ -1,0 +1,332 @@
+/* 页面 UI：宽屏(宽高比≥12:13)＝左预览 + 右(格式卡片/导出卡片)；窄屏(更瘦高)＝手机端布局。
+   手机端：顶端格式、底端导出均可折叠（导出按钮常驻），中间预览滚动且等宽缩放。 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  background: #eef1ec;
+  color: #26302a;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #dde4da;
+  flex: none;
+}
+
+header .brand {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+header .brand small {
+  font-weight: 400;
+  color: #4f5c52;
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+header .spacer {
+  flex: 1;
+}
+
+.canvas-meta {
+  font-size: 12px;
+  color: #4f5c52;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* 左：编辑即预览 */
+#leftCol {
+  flex: 1 1 62%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#previewCol {
+  flex: 1;
+  overflow: auto;
+  background: #e6eae4;
+  padding: 24px;
+}
+
+#previewScaler {
+  transform-origin: top left;
+}
+
+/* 右列 */
+#rightCol {
+  flex: none;
+  width: 330px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  overflow: auto;
+  border-left: 1px solid #dde4da;
+  background: #fff;
+}
+
+/* 格式卡片（宽屏置于导出区上方） */
+.tools-card {
+  border: 1px solid #dde4da;
+  border-radius: 12px;
+  background: #f7f9f5;
+  padding: 10px;
+}
+
+.area-toggle {
+  display: none;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: #26302a;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.md-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.md-tools button {
+  border: 1px solid #d7dfd4;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 5px 9px;
+  cursor: pointer;
+  color: #26302a;
+  min-width: 30px;
+}
+
+.md-tools button:hover {
+  background: #e8efe6;
+}
+
+.md-tools .sep {
+  width: 1px;
+  background: #dde4da;
+  margin: 2px 4px;
+}
+
+/* 导出区 */
+#exportArea {
+  border: 1px solid #dde4da;
+  border-radius: 12px;
+  background: #f7f9f5;
+  padding: 14px;
+}
+
+.exp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.exp-row .lab {
+  color: #4f5c52;
+  width: 44px;
+  flex: none;
+}
+
+.exp-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.exp-row input[type='radio'] {
+  accent-color: #3c7a4e;
+}
+
+.exp-row input[type='radio']:disabled {
+  accent-color: #a8bfae;
+}
+
+.q-hint {
+  font-size: 11px;
+  color: #7c887e;
+  width: 100%;
+  margin-left: 54px;
+  margin-top: -4px;
+}
+
+.size-est {
+  font-size: 12px;
+  color: #4f5c52;
+}
+
+.ex-warn {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #a05a1f;
+  background: #fdf3e3;
+  border: 1px solid #f0dcbc;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+#exportBtn {
+  width: 100%;
+  border: none;
+  background: #3c7a4e;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 11px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#exportBtn:disabled {
+  background: #a8bfae;
+  cursor: default;
+}
+
+#exportHint {
+  font-size: 12px;
+  color: #4f5c52;
+  margin-top: 8px;
+  min-height: 16px;
+  word-break: break-all;
+}
+
+#exportHint.err {
+  color: #b23b3b;
+}
+
+.stat-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #4f5c52;
+  border: 1px solid #dde4da;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 14px;
+}
+
+footer {
+  flex: none;
+  padding: 6px 20px;
+  font-size: 11px;
+  color: #7c887e;
+  background: #fff;
+  border-top: 1px solid #dde4da;
+}
+
+/* ================= 手机端（宽高比 < 2x:y，x:y≈手机页面比例 390:844 ≈ 12:13） ================= */
+@media (max-aspect-ratio: 12/13) {
+  header {
+    padding: 8px 12px;
+  }
+
+  header .brand small {
+    display: none;
+  }
+
+  main {
+    flex-direction: column;
+  }
+
+  /* rightCol 解体：格式排到顶、导出排到底，预览居中滚动 */
+  #rightCol {
+    display: contents;
+  }
+
+  .tools-card {
+    order: 1;
+    flex: none;
+    border: none;
+    border-bottom: 1px solid #dde4da;
+    border-radius: 0;
+    background: #fff;
+    padding: 6px 10px;
+  }
+
+  #leftCol {
+    order: 2;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #exportArea {
+    order: 3;
+    flex: none;
+    border: none;
+    border-top: 1px solid #dde4da;
+    border-radius: 0;
+    background: #fff;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .stat-card {
+    display: none;
+  }
+
+  footer {
+    display: none;
+  }
+
+  #previewCol {
+    padding: 12px 8px;
+  }
+
+  /* 折叠交互（仅手机端生效） */
+  .area-toggle {
+    display: block;
+  }
+
+  .tools-card .md-tools {
+    margin-top: 6px;
+  }
+
+  body.tools-collapsed .tools-card .tool-body {
+    display: none;
+  }
+
+  body.exp-collapsed #expBody {
+    display: none;
+  }
+
+  body.exp-collapsed #expToggle {
+    margin-bottom: 0;
+  }
+
+  body.exp-collapsed #exportBtn {
+    margin-top: 10px;
+  }
+
+  #exportHint {
+    max-height: 3.2em;
+    overflow: hidden;
+  }
+}

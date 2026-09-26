@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>文转长图 · 粘贴文字，导出长图</title>
+    <meta
+      name="description"
+      content="把 Markdown 文本一键排版成 1080px 手机长图的纯网页工具，支持全文一图与按章节多图导出。"
+    />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/prose.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">文转长图<small>粘贴文本 → 排版 → 导出图片</small></div>
+      <div class="spacer"></div>
+      <div class="canvas-meta">宽 1080px</div>
+    </header>
+
+    <main>
+      <!-- 中：所见即所得排版面（直接编辑；窄屏时缩放到与页面等宽） -->
+      <div id="leftCol">
+        <div id="previewCol">
+          <div id="previewSized">
+            <div id="previewScaler">
+              <div class="long-wrap" id="paperWrap">
+                <div class="tiptap-prose title-flow" id="titleFlow" contenteditable="true" spellcheck="false"></div>
+                <div class="tiptap-prose paged-flow" id="paperFlow" contenteditable="true" spellcheck="false"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 格式栏（宽屏：右列导出区上方；窄屏：固定顶端、可折叠） -->
+      <div id="rightCol">
+        <div class="tools-card" id="mdTools">
+          <button class="area-toggle" id="toolsToggle" type="button" aria-expanded="true">格式 ▾</button>
+          <div class="md-tools tool-body">
+            <button data-cmd="bold" title="加粗（Ctrl+B）"><b>B</b></button>
+            <button data-cmd="italic" title="斜体（Ctrl+I）"><i>I</i></button>
+            <button data-cmd="strikeThrough" title="删除线"><s>S</s></button>
+            <button data-cmd="code" title="行内代码">&lt;/&gt;</button>
+            <span class="sep"></span>
+            <button data-cmd="h1" title="一级标题＝分章边界">H1</button>
+            <button data-cmd="h2" title="二级标题">H2</button>
+            <button data-cmd="h3" title="三级标题">H3</button>
+            <button data-cmd="p" title="正文">正文</button>
+            <span class="sep"></span>
+            <button data-cmd="insertUnorderedList" title="无序列表">• 列表</button>
+            <button data-cmd="insertOrderedList" title="有序列表">1. 列表</button>
+            <button data-cmd="blockquote" title="引用">&ldquo; 引用</button>
+            <button data-cmd="insertHorizontalRule" title="分割线">― 分隔</button>
+            <span class="sep"></span>
+            <button data-cmd="link" title="插入链接">链接</button>
+            <button data-cmd="image" title="插入图片（外链需允许跨域）">图片</button>
+            <span class="sep"></span>
+            <button data-cmd="openFile" title="导入 .md / .txt 文档，自动识别 Markdown">导入文档</button>
+            <input id="fileInput" type="file" accept=".md,.markdown,.txt" hidden />
+          </div>
+        </div>
+
+        <!-- 导出（与编辑完全分离；窄屏：固定底端、设置可折叠，导出按钮常驻） -->
+        <div id="exportArea">
+          <button class="area-toggle" id="expToggle" type="button" aria-expanded="true">导出 ▾</button>
+          <div id="expBody">
+            <div class="exp-row">
+              <span class="lab">方式</span>
+              <label><input type="radio" name="expMode" value="all" checked />全文一图直出</label>
+              <label><input type="radio" name="expMode" value="chapter" />分章节多图（按 H1 划分）</label>
+            </div>
+            <div class="exp-row">
+              <span class="lab">清晰度</span>
+              <label><input type="radio" name="expQuality" value="original" checked />原图</label>
+              <label><input type="radio" name="expQuality" value="hd" />高清</label>
+              <label><input type="radio" name="expQuality" value="compressed" />压缩</label>
+            </div>
+            <div class="exp-row">
+              <span class="lab">格式</span>
+              <label><input type="radio" name="expFmt" value="png" />PNG</label>
+              <label><input type="radio" name="expFmt" value="jpeg" />JPG</label>
+              <span id="qualityHint" class="q-hint">1 倍截图 · 无损</span>
+            </div>
+            <div class="exp-row">
+              <span class="lab">大小</span>
+              <span id="sizeEstimate" class="size-est">—</span>
+            </div>
+            <p id="compressWarn" class="ex-warn" hidden></p>
+          </div>
+          <button id="exportBtn" type="button">导出图片</button>
+          <div id="exportHint">直接编辑上方文字；粘贴 Markdown 会自动识别格式。</div>
+        </div>
+
+        <div class="stat-card">
+          <span id="statChars">0 字</span>
+          <span id="statChapters"></span>
+        </div>
+      </div>
+    </main>
+
+    <footer>纯静态页面，所有内容仅在您的浏览器中处理，不会上传。</footer>
+
+    <script src="vendor/html2canvas.min.js"></script>
+    <script src="vendor/jszip.min.js"></script>
+    <script src="js/markdown.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

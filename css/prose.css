@@ -1,0 +1,171 @@
+/* 长图正文排版：复刻桌面版 global.css 的 .tiptap-prose / h0 段（逻辑属性改为物理属性，保证浏览器光栅化一致）。 */
+
+/* 复刻桌面版全局 reset 的盒模型与清零（作用域限定在长图 DOM 内，后续规则会重新加回需要的 padding/margin）。
+   注意：flow 的 width=版心宽 + 自身四边 padding（border-box）是桌面版 flowShell 的原样语义 */
+.long-wrap,
+.long-wrap * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.long-wrap {
+  position: relative;
+}
+
+.tiptap-prose {
+  outline: none;
+  font-size: var(--ts-body, 16px);
+  line-height: var(--tl-body, 1.9);
+  color: #2f2a26;
+  font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.tiptap-prose > * + * {
+  margin-top: 0.8em;
+}
+
+.tiptap-prose h1,
+.tiptap-prose h2,
+.tiptap-prose h3,
+.tiptap-prose h4,
+.tiptap-prose h5,
+.tiptap-prose h6 {
+  font-weight: 700;
+  line-height: 1.4;
+  margin-top: 1.4em;
+  color: #2f2a26;
+}
+
+.tiptap-prose h1 {
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h1, 1.7));
+}
+.tiptap-prose h2 {
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h2, 1.4));
+}
+.tiptap-prose h3 {
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h3, 1.2));
+}
+.tiptap-prose h4 {
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h4, 1.1));
+}
+.tiptap-prose h5 {
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h5, 1.05));
+}
+.tiptap-prose h6 {
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h6, 1));
+}
+
+/* H0 文档标题：仅作为首块 */
+.tiptap-prose h0 {
+  display: block;
+  font-size: calc(var(--ts-body, 16px) * var(--sc-h0, 2.2));
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+  margin-bottom: 0.5em;
+  color: #2f2a26;
+}
+
+.tiptap-prose p {
+  margin: 0;
+}
+
+.tiptap-prose p:not(:first-child) {
+  margin-top: 0.8em;
+}
+
+.tiptap-prose blockquote {
+  border-left: 3px solid #3c7a4e;
+  background: #f7f9f5;
+  padding: 8px 16px;
+  color: #5c554d;
+  border-radius: 0 6px 6px 0;
+}
+
+.tiptap-prose blockquote p {
+  margin: 0;
+}
+
+.tiptap-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.tiptap-prose hr {
+  border: none;
+  border-top: 1px solid #c4cfc1;
+  margin: 1.6em 0;
+}
+
+.tiptap-prose ul,
+.tiptap-prose ol {
+  padding-left: 1.6em;
+  margin: 0;
+}
+
+.tiptap-prose li + li {
+  margin-top: 0.3em;
+}
+
+.tiptap-prose li > p {
+  margin: 0;
+}
+
+.tiptap-prose code {
+  background: #f1f4ef;
+  border-radius: 4px;
+  padding: 0.08em 0.35em;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.92em;
+}
+
+.tiptap-prose pre.code-block {
+  background: #f7f9f5;
+  border: 1px solid #e2e8df;
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
+
+.tiptap-prose a {
+  color: #3c7a4e;
+  text-decoration: underline;
+}
+
+/* 编辑态专用（只作用于 #titleFlow / #paperFlow，导出克隆进无 contenteditable 的新壳后这些规则天然失效） */
+#titleFlow,
+#paperFlow {
+  caret-color: #3c7a4e;
+}
+
+#paperFlow {
+  min-height: 200px;
+}
+
+#titleFlow:focus,
+#paperFlow:focus {
+  outline: none;
+}
+
+#titleFlow h0.doc-title:empty::before {
+  content: '文档标题（导出文件名）';
+  color: #b9c4b9;
+  font-weight: 400;
+}
+
+/* 分章模式下描出 H1 边界，提示多图切分位置 */
+body.mode-chapter #paperFlow > h1 {
+  outline: 2px dashed #e0a8c8;
+  outline-offset: 10px;
+}
