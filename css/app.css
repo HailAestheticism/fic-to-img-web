@@ -41,9 +41,26 @@ header .spacer {
   flex: 1;
 }
 
-.canvas-meta {
+/* 右上角「导入文档」：与格式工具按钮同一套外观 */
+.import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #d7dfd4;
+  background: #fff;
+  border-radius: 6px;
   font-size: 12px;
-  color: #4f5c52;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  color: #26302a;
+  flex: none;
+}
+
+.import-btn:hover {
+  background: #e8efe6;
 }
 
 main {
@@ -105,6 +122,70 @@ main {
   cursor: pointer;
 }
 
+/* 格式卡片头部：折叠按钮（手机端）+ 分区页签 */
+.tools-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tools-head .area-toggle {
+  width: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-tabs {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  flex: none;
+  border: 1px solid #d7dfd4;
+  border-radius: 8px;
+  padding: 2px;
+  background: #fff;
+}
+
+.tool-tabs .tab {
+  border: none;
+  background: none;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #4f5c52;
+}
+
+.tool-tabs .tab.on {
+  background: #3c7a4e;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* 两个分区左右翻页（transform 位移；容器高度由 JS 跟随当前页，避免空白） */
+.tool-panels {
+  overflow: hidden;
+  transition: height 0.22s ease;
+}
+
+.tool-track {
+  display: flex;
+  align-items: flex-start;
+  width: 200%;
+  transition: transform 0.22s ease;
+}
+
+.tools-card.panel-typo .tool-track {
+  transform: translateX(-50%);
+}
+
+.tool-panel {
+  flex: 0 0 50%;
+  width: 50%;
+  min-width: 0;
+  padding-top: 8px;
+}
+
 .md-tools {
   display: flex;
   flex-wrap: wrap;
@@ -112,6 +193,93 @@ main {
 }
 
 .md-tools button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  min-width: 32px;
+  padding: 0 7px;
+  border: 1px solid #d7dfd4;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  color: #26302a;
+}
+
+.md-tools button:hover {
+  background: #e8efe6;
+}
+
+/* 图标按钮：描边跟随按钮文字色（sprite 里不写死颜色） */
+.ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.md-tools .sep {
+  width: 1px;
+  background: #dde4da;
+  margin: 2px 4px;
+}
+
+/* 排版参数：字号/行距/段距/字距 + 四边页边距（标签自带 (px)，无标题行） */
+.type-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ty-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 10px;
+}
+
+.ty {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #4f5c52;
+  min-width: 0;
+}
+
+/* 标签定宽＝最宽的「行间距(px)」，两列输入框才能上下对齐 */
+.ty span {
+  flex: none;
+  width: 58px;
+}
+
+/* 输入框定宽缩短：标签带 (px) 后仍保持每行两组参数 */
+.ty input {
+  width: 62px;
+  flex: none;
+  min-width: 0;
+  border: 1px solid #d7dfd4;
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: #26302a;
+}
+
+.ty input:focus {
+  outline: none;
+  border-color: #3c7a4e;
+}
+
+.ty-reset {
+  align-self: flex-start;
   border: 1px solid #d7dfd4;
   background: #fff;
   border-radius: 6px;
@@ -119,17 +287,10 @@ main {
   padding: 5px 9px;
   cursor: pointer;
   color: #26302a;
-  min-width: 30px;
 }
 
-.md-tools button:hover {
+.ty-reset:hover {
   background: #e8efe6;
-}
-
-.md-tools .sep {
-  width: 1px;
-  background: #dde4da;
-  margin: 2px 4px;
 }
 
 /* 导出区 */
@@ -270,6 +431,9 @@ footer {
     border-radius: 0;
     background: #fff;
     padding: 6px 10px;
+    /* 展开时格式栏不吃满屏幕：内部滚动 */
+    max-height: 46vh;
+    overflow-y: auto;
   }
 
   #leftCol {
@@ -305,8 +469,8 @@ footer {
     display: block;
   }
 
-  .tools-card .md-tools {
-    margin-top: 6px;
+  .tools-card .tool-panel {
+    padding-top: 6px;
   }
 
   body.tools-collapsed .tools-card .tool-body {

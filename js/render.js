@@ -3,16 +3,16 @@
 ;(function (global) {
   'use strict'
 
-  // 手机长图：1080px 宽，边距 256/100/72/100 px（上/右/下/左），正文 36px / 行距 1.75。
-  // 静态页专用取值：桌面版 paper.ts mobileLong（56/48/72/48、正文 32px）基础上顶部 +200、正文 36px、左右 100；
-  // 边距为 1:1 语义（见 applyCanvas）→ 文字距画布左右各 100px。
+  // 手机长图：1080px 宽。静态页专用默认值（桌面版 paper.ts mobileLong 是 56/48/72/48、正文 32px、行距 1.75）：
+  // 顶部 +200、左右 100、正文 36px；行/段/字间距用 px（行距 63px≈1.75 倍，段距 29px≈原 0.8em）。
+  // 页边距为 1:1 语义（见 applyCanvas）→ 边距数值＝实际留白。
   var CANVAS = {
     mobileLong: {
       key: 'mobileLong',
       label: '手机长图',
       widthPx: 1080,
       marginsPx: [256, 100, 72, 100],
-      typo: { bodySize: 36, bodyLineHeight: '1.75' }
+      typo: { bodySize: 36, linePx: 63, paraGapPx: 29, letterSpacingPx: 0 }
     }
   }
 
@@ -34,9 +34,6 @@
       switch (sp.t) {
         case 'text':
           html += esc(sp.v).replace(/\n/g, '<br>')
-          break
-        case 'code':
-          html += '<code>' + esc(sp.v) + '</code>'
           break
         case 'b':
           html += '<strong>' + renderSpans(sp.v) + '</strong>'
@@ -106,30 +103,45 @@
     return blocks.map(blockHtml).join('')
   }
 
-  /** 把画布几何/排版变量应用到一套 wrap 及其中的每个 flow（预览与导出壳共用）。
-   *  wrap 内每个直接子元素都是一条 flow（标题流、正文流），各自独立编辑、互不影响。 */
-  function applyCanvas(wrap, canvasKey) {
-    var c = CANVAS[canvasKey] || CANVAS.mobileLong
-    wrap.style.width = Math.round(c.widthPx) + 'px'
+  /** 默认排版设置（px 单位），app.js 以此为基准合并用户设置 */
+  function defaultTypo() {
+    var d = CANVAS.mobileLong
+    return {
+      marginsPx: d.marginsPx.slice(),
+      bodySize: d.typo.bodySize,
+      linePx: d.typo.linePx,
+      paraGapPx: d.typo.paraGapPx,
+      letterSpacingPx: d.typo.letterSpacingPx
+    }
+  }
+
+  /** 把画布几何/排版设置应用到 wrap 及其中的每条 flow（预览与导出壳共用）。
+   *  每条 flow 独立可编辑（标题流、正文流）。 */
+  function applyCanvas(wrap, s) {
+    s = s || defaultTypo()
+    var w = CANVAS.mobileLong.widthPx
+    wrap.style.width = Math.round(w) + 'px'
     wrap.style.backgroundColor = '#ffffff'
     // 页边距 1:1 语义：padding 挂在 wrap 上，flow 占满版心 → 边距数值＝实际留白
     // （静态页有意偏离桌面版 flowShell 的双倍横向边距语义，便于直接调边距）
     wrap.style.padding =
-      c.marginsPx[0] + 'px ' + c.marginsPx[1] + 'px ' + c.marginsPx[2] + 'px ' + c.marginsPx[3] + 'px'
-    wrap.style.setProperty('--ts-body', c.typo.bodySize + 'px')
-    wrap.style.setProperty('--tl-body', c.typo.bodyLineHeight)
+      s.marginsPx[0] + 'px ' + s.marginsPx[1] + 'px ' + s.marginsPx[2] + 'px ' + s.marginsPx[3] + 'px'
+    wrap.style.setProperty('--ts-body', s.bodySize + 'px')
+    wrap.style.setProperty('--tl-body', s.linePx + 'px')
+    wrap.style.setProperty('--tp-gap', s.paraGapPx + 'px')
+    wrap.style.setProperty('--ls', s.letterSpacingPx + 'px')
     for (var k in SCALES) wrap.style.setProperty('--sc-' + k, SCALES[k])
-    var contentW = Math.round(c.widthPx - c.marginsPx[1] - c.marginsPx[3]) + 'px'
+    var contentW = Math.round(w - s.marginsPx[1] - s.marginsPx[3]) + 'px'
     Array.prototype.forEach.call(wrap.children, function (flow) {
       flow.style.width = contentW
       flow.style.padding = '0'
     })
-    return c
+    return s
   }
 
   /** 导出壳：wrap 管背景与页边距，标题流/正文流各一条（均不带 contenteditable，
    *  与编辑器样式选择器天然隔离）。 */
-  function buildShell(canvasKey) {
+  function buildShell(s) {
     var wrap = document.createElement('div')
     wrap.className = 'long-wrap'
     var title = document.createElement('div')
@@ -138,8 +150,8 @@
     flow.className = 'tiptap-prose paged-flow'
     wrap.appendChild(title)
     wrap.appendChild(flow)
-    var c = applyCanvas(wrap, canvasKey)
-    return { wrap: wrap, title: title, flow: flow, geom: c }
+    var used = applyCanvas(wrap, s)
+    return { wrap: wrap, title: title, flow: flow, settings: used }
   }
 
   /** 等字体与图片就绪（对齐 render-shared.ts settle） */
@@ -179,6 +191,7 @@
 
   global.RENDER = {
     CANVAS: CANVAS,
+    defaultTypo: defaultTypo,
     applyCanvas: applyCanvas,
     buildShell: buildShell,
     blockHtml: blockHtml,

@@ -1,7 +1,8 @@
 /* 长图正文排版：复刻桌面版 global.css 的 .tiptap-prose / h0 段（逻辑属性改为物理属性，保证浏览器光栅化一致）。 */
 
 /* 复刻桌面版全局 reset 的盒模型与清零（作用域限定在长图 DOM 内，后续规则会重新加回需要的 padding/margin）。
-   注意：flow 的 width=版心宽 + 自身四边 padding（border-box）是桌面版 flowShell 的原样语义 */
+   注意：静态页页边距为 1:1 语义 —— padding 挂在 .long-wrap 上，flow 宽＝版心宽且自身 padding 为 0，
+   所以设置里的边距数值就是实际留白（桌面版 flowShell 是双倍横向边距，此处有意不同）。 */
 .long-wrap,
 .long-wrap * {
   box-sizing: border-box;
@@ -17,6 +18,7 @@
   outline: none;
   font-size: var(--ts-body, 16px);
   line-height: var(--tl-body, 1.9);
+  letter-spacing: var(--ls, 0px);
   color: #2f2a26;
   font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
   word-break: break-word;
@@ -24,7 +26,7 @@
 }
 
 .tiptap-prose > * + * {
-  margin-top: 0.8em;
+  margin-top: var(--tp-gap, 0.8em);
 }
 
 .tiptap-prose h1,
@@ -74,7 +76,7 @@
 }
 
 .tiptap-prose p:not(:first-child) {
-  margin-top: 0.8em;
+  margin-top: var(--tp-gap, 0.8em);
 }
 
 .tiptap-prose blockquote {
@@ -115,14 +117,6 @@
 
 .tiptap-prose li > p {
   margin: 0;
-}
-
-.tiptap-prose code {
-  background: #f1f4ef;
-  border-radius: 4px;
-  padding: 0.08em 0.35em;
-  font-family: Consolas, 'Courier New', monospace;
-  font-size: 0.92em;
 }
 
 .tiptap-prose pre.code-block {

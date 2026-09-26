@@ -1,9 +1,9 @@
-/* 轻量 Markdown 解析：行内标记 + 块级结构 + H1 分章。规则与桌面版 importer.ts 对齐并按静态页需要扩展（保留 1-6 级标题、行内代码、链接、图片）。 */
+/* 轻量 Markdown 解析：行内标记 + 块级结构 + H1 分章。规则与桌面版 importer.ts 对齐并按静态页需要扩展（保留 1-6 级标题、链接、图片；行内代码已按需求移除）。 */
 ;(function (global) {
   'use strict'
 
   var INLINE_SRC =
-    '`([^`\\n]+)`|!\\[([^\\]]*)\\]\\(([^)\\s]+)\\)|\\[([^\\]]+)\\]\\(([^)\\s]+)\\)|(\\*\\*|__)(?=\\S)([\\s\\S]*?\\S)\\6|~~(?=\\S)([\\s\\S]*?\\S)~~|\\*(?=\\S)([\\s\\S]*?\\S)\\*|(?<![\\w_])_(?=\\S)([\\s\\S]*?\\S)_(?![\\w_])|<(https?:\\/\\/[^>\\s]+)>'
+    '!\\[([^\\]]*)\\]\\(([^)\\s]+)\\)|\\[([^\\]]+)\\]\\(([^)\\s]+)\\)|(\\*\\*|__)(?=\\S)([\\s\\S]*?\\S)\\5|~~(?=\\S)([\\s\\S]*?\\S)~~|\\*(?=\\S)([\\s\\S]*?\\S)\\*|(?<![\\w_])_(?=\\S)([\\s\\S]*?\\S)_(?![\\w_])|<(https?:\\/\\/[^>\\s]+)>'
 
   function safeUrl(u) {
     if (/^(https?:\/\/|mailto:|#|\/)/i.test(u)) return u
@@ -19,14 +19,13 @@
     var m
     while ((m = re.exec(s))) {
       if (m.index > last) out.push({ t: 'text', v: s.slice(last, m.index) })
-      if (m[1] !== undefined) out.push({ t: 'code', v: m[1] })
-      else if (m[3] !== undefined) out.push({ t: 'img', src: safeUrl(m[3]), alt: m[2] })
-      else if (m[5] !== undefined) out.push({ t: 'a', href: safeUrl(m[5]), v: inline(m[4]) })
-      else if (m[7] !== undefined) out.push({ t: 'b', v: inline(m[7]) })
-      else if (m[8] !== undefined) out.push({ t: 's', v: inline(m[8]) })
+      if (m[2] !== undefined) out.push({ t: 'img', src: safeUrl(m[2]), alt: m[1] })
+      else if (m[4] !== undefined) out.push({ t: 'a', href: safeUrl(m[4]), v: inline(m[3]) })
+      else if (m[6] !== undefined) out.push({ t: 'b', v: inline(m[6]) })
+      else if (m[7] !== undefined) out.push({ t: 's', v: inline(m[7]) })
+      else if (m[8] !== undefined) out.push({ t: 'i', v: inline(m[8]) })
       else if (m[9] !== undefined) out.push({ t: 'i', v: inline(m[9]) })
-      else if (m[10] !== undefined) out.push({ t: 'i', v: inline(m[10]) })
-      else if (m[11] !== undefined) out.push({ t: 'a', href: safeUrl(m[11]), v: [{ t: 'text', v: m[11] }] })
+      else if (m[10] !== undefined) out.push({ t: 'a', href: safeUrl(m[10]), v: [{ t: 'text', v: m[10] }] })
       last = re.lastIndex
     }
     if (last < s.length) out.push({ t: 'text', v: s.slice(last) })

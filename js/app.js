@@ -11,9 +11,11 @@
     '# 使用说明',
     '',
     '左侧就是最终长图，直接在上面打字或粘贴即可。粘贴带 Markdown 记号的文本会自动识别为格式：',
-    '**加粗**、*斜体*、~~删除线~~、`代码`、> 引用、- 列表、1. 有序列表、--- 分割线、[链接](https://example.com)、![图片](图片网址)。',
+    '**加粗**、*斜体*、~~删除线~~、> 引用、- 列表、1. 有序列表、--- 分割线、[链接](https://example.com)、![图片](图片网址)。',
     '',
-    '顶部这一行大字是文档标题（导出文件名也用它），选中文字后用上方工具栏可调整格式。',
+    '顶部这一行大字是文档标题（导出文件名也用它）。选中文字后用「基本」页可加粗、斜体、下划线、删除线、四种对齐，以及按两字宽增加/减少缩进。',
+    '',
+    '「排版」页用 px 直接调字号、行间距、段间距、字间距和四边页边距，改完即刻生效。',
     '',
     '# 第一章 示例章节',
     '',
@@ -54,10 +56,46 @@
   }
 
   var saved = store.load()
+
+  /* ---------- 排版参数（px）：默认值取自 render.js 预设，用户设置覆盖之 ---------- */
+
+  // 范围只在这里定义一份，input 的 min/max/step 由 bindTypo() 写入
+  var TYPO_LIMITS = {
+    bodySize: { min: 12, max: 96, step: 1 },
+    linePx: { min: 10, max: 300, step: 1 },
+    paraGapPx: { min: 0, max: 300, step: 1 },
+    letterSpacingPx: { min: -5, max: 40, step: 0.5 }
+  }
+  var MARGIN_LIMIT = { min: 0, max: 600, step: 1 }
+
+  function clamp(v, lim) {
+    var n = parseFloat(v)
+    if (isNaN(n)) return null
+    return Math.min(lim.max, Math.max(lim.min, n))
+  }
+
+  /** 存档排版设置逐项校验后合并到默认值（缺失/非数字/越界都退回默认，防止坏存档毁掉排版） */
+  function loadTypo() {
+    var t = RENDER.defaultTypo()
+    var s = saved.typo || {}
+    Object.keys(TYPO_LIMITS).forEach(function (k) {
+      var v = clamp(s[k], TYPO_LIMITS[k])
+      if (v !== null) t[k] = v
+    })
+    if (Array.isArray(s.marginsPx)) {
+      for (var i = 0; i < 4; i++) {
+        var m = clamp(s.marginsPx[i], MARGIN_LIMIT)
+        if (m !== null) t.marginsPx[i] = m
+      }
+    }
+    return t
+  }
+
   var state = {
     mode: saved.mode === 'chapter' ? 'chapter' : 'all',
     fmt: saved.fmt === 'jpeg' ? 'jpeg' : 'png',
-    quality: ['original', 'hd', 'compressed'].indexOf(saved.quality) >= 0 ? saved.quality : 'original'
+    quality: ['original', 'hd', 'compressed'].indexOf(saved.quality) >= 0 ? saved.quality : 'original',
+    typo: loadTypo()
   }
 
   var els = {
@@ -73,7 +111,9 @@
     exportHint: $('exportHint'),
     qualityHint: $('qualityHint'),
     sizeEstimate: $('sizeEstimate'),
-    compressWarn: $('compressWarn')
+    compressWarn: $('compressWarn'),
+    mdTools: $('mdTools'),
+    panels: $('toolPanels')
   }
 
   var QUALITY_HINTS = {
@@ -105,11 +145,16 @@
     els.titleFlow.innerHTML = '<h0 class="doc-title">' + RENDER.esc(s) + '</h0>'
   }
 
-  // 全选后直接打字会把 h0 冲掉（标题样式与导出取字都依赖它），离开编辑区时补回
-  function normalizeTitle() {
+  // 标题流只放一个 h0（导出取字与样式都依赖它）；全选后打字会把 h0 冲掉，故离开/导出前修回
+  function titleHtml() {
     var n = els.titleFlow.firstChild
-    if (els.titleFlow.childNodes.length === 1 && n && n.nodeType === 1 && n.tagName === 'H0') return
-    els.titleFlow.innerHTML = '<h0 class="doc-title">' + els.titleFlow.innerHTML + '</h0>'
+    var single = els.titleFlow.childNodes.length === 1 && n && n.nodeType === 1 && n.tagName === 'H0'
+    if (single) return els.titleFlow.innerHTML
+    return '<h0 class="doc-title">' + els.titleFlow.innerHTML + '</h0>'
+  }
+
+  function normalizeTitle() {
+    els.titleFlow.innerHTML = titleHtml()
   }
 
   function initContent() {
@@ -120,7 +165,11 @@
       var legacy = tmp.querySelector('h0.doc-title')
       var t = legacy ? legacy.textContent.trim() : ''
       if (legacy) legacy.remove()
-      setTitleText(t || saved.title || '')
+      if (saved.titleHtml) {
+        els.titleFlow.innerHTML = saved.titleHtml
+      } else {
+        setTitleText(t || saved.title || '')
+      }
       if (!titleText()) setTitleText(UNTITLED)
       els.flow.innerHTML = tmp.innerHTML
     } else {
@@ -130,7 +179,7 @@
   }
 
   function applyCanvas() {
-    RENDER.applyCanvas(els.paperWrap, 'mobileLong')
+    RENDER.applyCanvas(els.paperWrap, state.typo)
     document.body.classList.toggle('mode-chapter', state.mode === 'chapter')
     scheduleScale()
   }
@@ -193,7 +242,7 @@
   }
 
   function shellWith(nodes) {
-    var shell = RENDER.buildShell('mobileLong')
+    var shell = RENDER.buildShell(state.typo)
     cloneTitleInto(shell)
     nodes.forEach(function (n) {
       shell.flow.appendChild(n.cloneNode(true))
@@ -207,7 +256,7 @@
     }
     var chs = chaptersFromDom()
     return chs.map(function (ch, i) {
-      var shell = RENDER.buildShell('mobileLong')
+      var shell = RENDER.buildShell(state.typo)
       // 文档标题只落在第一张图（对齐桌面版：docTitle 属于首章/序章）
       if (i === 0) cloneTitleInto(shell)
       ch.nodes.forEach(function (n) {
@@ -233,10 +282,10 @@
     probe.style.cssText = 'position:absolute;left:-100000px;top:0;'
     probe.appendChild(el)
     document.body.appendChild(probe)
-    var c = RENDER.CANVAS.mobileLong
-    var w = Math.round(c.widthPx)
-    var inkH = Math.max(0, el.offsetHeight - c.marginsPx[0] - c.marginsPx[2])
-    var contentW = Math.round(w - c.marginsPx[1] - c.marginsPx[3])
+    var w = Math.round(RENDER.CANVAS.mobileLong.widthPx)
+    var mg = state.typo.marginsPx
+    var inkH = Math.max(0, el.offsetHeight - mg[0] - mg[2])
+    var contentW = Math.round(w - mg[1] - mg[3])
     probe.remove()
     return { w: w, h: el.offsetHeight, ink: contentW * inkH }
   }
@@ -301,7 +350,8 @@
         mode: state.mode,
         fmt: state.fmt,
         quality: state.quality,
-        title: titleText(),
+        typo: state.typo,
+        titleHtml: titleHtml(),
         html: els.flow.innerHTML
       })
     }, 600)
@@ -390,15 +440,40 @@
     blockquote: 1,
     insertUnorderedList: 1,
     insertOrderedList: 1,
-    insertHorizontalRule: 1
+    insertHorizontalRule: 1,
+    indent: 1,
+    outdent: 1
+  }
+
+  /* ---------- 缩进：顶层块 margin-left，步长＝2 倍字号（中文两字缩进），与 px 设置同量纲 ---------- */
+
+  function selectedBlocks(flow) {
+    var sel = window.getSelection()
+    if (!sel || !sel.rangeCount || !flow.contains(sel.anchorNode)) return []
+    var range = sel.getRangeAt(0)
+    var hit = Array.prototype.filter.call(flow.children, function (n) {
+      return range.intersectsNode(n)
+    })
+    if (hit.length) return hit
+    var n = range.startContainer // 折叠光标：取光标所在顶层块
+    while (n.parentNode && n.parentNode !== flow) n = n.parentNode
+    return n.parentNode === flow ? [n] : []
+  }
+
+  function shiftIndent(dir) {
+    var step = Math.round(state.typo.bodySize * 2)
+    selectedBlocks(lastFocusFlow || els.flow).forEach(function (b) {
+      var v = Math.max(0, (parseFloat(b.style.marginLeft) || 0) + dir * step)
+      b.style.marginLeft = v ? v + 'px' : ''
+    })
   }
 
   var TOOLS = {
-    code: function () {
-      var sel = window.getSelection()
-      var picked = sel && sel.toString()
-      if (!picked) return
-      document.execCommand('insertHTML', false, '<code>' + RENDER.esc(picked) + '</code>&nbsp;')
+    indent: function () {
+      shiftIndent(1)
+    },
+    outdent: function () {
+      shiftIndent(-1)
     },
     h1: function () {
       document.execCommand('formatBlock', false, 'H1')
@@ -448,6 +523,10 @@
     onEdit()
   })
 
+  $('importBtn').addEventListener('click', function () {
+    TOOLS.openFile()
+  })
+
   $('fileInput').addEventListener('change', function (e) {
     var f = e.target.files && e.target.files[0]
     if (!f) return
@@ -460,6 +539,57 @@
     }
     r.readAsText(f, 'utf-8')
     e.target.value = ''
+  })
+
+  /* ---------- 排版参数输入（px，change 即生效并预览） ---------- */
+
+  function typoInputs() {
+    return Array.prototype.slice.call(document.querySelectorAll('#mdTools input[type="number"]'))
+  }
+
+  function valueOf(inp) {
+    if (inp.dataset.typo) return state.typo[inp.dataset.typo]
+    return state.typo.marginsPx[+inp.dataset.margin]
+  }
+
+  function writeTypo(inp, v) {
+    if (inp.dataset.typo) state.typo[inp.dataset.typo] = v
+    else state.typo.marginsPx[+inp.dataset.margin] = v
+  }
+
+  function fillTypo() {
+    typoInputs().forEach(function (inp) {
+      inp.value = valueOf(inp)
+    })
+  }
+
+  function bindTypo() {
+    typoInputs().forEach(function (inp) {
+      var lim = inp.dataset.typo ? TYPO_LIMITS[inp.dataset.typo] : MARGIN_LIMIT
+      inp.min = lim.min
+      inp.max = lim.max
+      inp.step = lim.step
+      inp.value = valueOf(inp)
+      inp.title = '范围 ' + lim.min + '~' + lim.max + 'px'
+      inp.addEventListener('change', function () {
+        var v = clamp(inp.value, lim)
+        if (v === null) {
+          fillTypo()
+          return
+        }
+        writeTypo(inp, v)
+        inp.value = v
+        applyCanvas()
+        onEdit()
+      })
+    })
+  }
+
+  $('typoReset').addEventListener('click', function () {
+    state.typo = RENDER.defaultTypo()
+    fillTypo()
+    applyCanvas()
+    onEdit()
   })
 
   /* ---------- 选项 ---------- */
@@ -564,8 +694,39 @@
       btn.textContent = label + (collapsed ? ' ▸' : ' ▾')
       btn.setAttribute('aria-expanded', String(!collapsed))
       if (bodyClass === 'exp-collapsed' || bodyClass === 'tools-collapsed') scheduleScale()
+      if (bodyClass === 'tools-collapsed') fitPanels()
     })
   }
+
+  /* ---------- 格式区分页（基本 / 排版）：页签切换即左右翻页 ---------- */
+
+  var toolPanel = 'basic'
+
+  // 卡片折叠时（display:none）量不到高度，直接跳过，别把 height 写成 0
+  function fitPanels() {
+    var box = els.panels
+    if (!box.offsetParent) return
+    box.style.height = $(toolPanel === 'typo' ? 'panelTypo' : 'panelBasic').offsetHeight + 'px'
+  }
+
+  function showPanel(name) {
+    toolPanel = name
+    els.mdTools.classList.toggle('panel-typo', name === 'typo')
+    Array.prototype.forEach.call(els.mdTools.querySelectorAll('.tool-tabs .tab'), function (t) {
+      var on = t.dataset.panel === name
+      t.classList.toggle('on', on)
+      t.setAttribute('aria-selected', String(on))
+    })
+    fitPanels()
+  }
+
+  Array.prototype.forEach.call(els.mdTools.querySelectorAll('.tool-tabs .tab'), function (t) {
+    t.addEventListener('click', function () {
+      showPanel(t.dataset.panel)
+    })
+  })
+
+  window.addEventListener('resize', fitPanels)
 
   bindCollapse('tools-collapsed', 'toolsToggle', '格式')
   bindCollapse('exp-collapsed', 'expToggle', '导出')
@@ -581,9 +742,14 @@
     $('expToggle').setAttribute('aria-expanded', 'false')
   }
   MQ_MOBILE.addEventListener('change', scheduleScale)
+  bindTypo()
   applyCanvas()
   els.qualityHint.textContent = QUALITY_HINTS[state.quality]
   syncFmtEnabled()
   updateStats()
-  RENDER.settle(els.flow).then(updateEstimate)
+  fitPanels()
+  RENDER.settle(els.flow).then(function () {
+    fitPanels()
+    updateEstimate()
+  })
 })()
